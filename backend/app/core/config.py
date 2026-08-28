@@ -1,0 +1,7 @@
+# Hardcoded demo limits. Not a settings UI.
+
+MAX_RETRIES = 3
+CONFIDENCE_HOLD_THRESHOLD = 0.6
+RETRY_COOLDOWN_SECONDS = 300  # 5 minutes between retry_now attempts
+MAX_BATCH_RETRY_ACTIONS = 20
+MAX_BATCH_RETRY_AMOUNT_PAISE = 2_000_000  # ₹20,000
