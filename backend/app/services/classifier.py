@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from sqlalchemy.orm import Session
 
 from app.models import AuditLog, Payment, RootCause, _id
+from app.services.llm_classifier import classify_with_fallback
+from app.services.tools import get_bank_health_for_payment
 
 
 @dataclass(frozen=True)
@@ -11,22 +13,30 @@ class ClassificationResult:
     root_cause: RootCause
     reasoning: str
     confidence: float | None
+    source: str = "deterministic_rules"
 
 
 def detect_root_cause(payment: Payment) -> ClassificationResult:
-    """Rules-only diagnosis from error_code + error_reason. No LLM."""
+    """Diagnostic Hierarchy:
+    1. Deterministic Rules (85% known patterns, 0 token cost, never cached)
+    2. Diagnosis Cache (in-memory fingerprint matching)
+    3. Primary AI: Groq (qwen/qwen3.8-27b on OpenAI-compatible endpoint)
+    4. Deterministic Fallback (quarantine + guardrails containment)
+    """
     reason = (payment.error_reason or "").lower()
     code = (payment.error_code or "").upper()
 
+    # --- Stage 1: Deterministic Rules (Never cached) ---
     if _is_insufficient_funds(reason, code):
         return ClassificationResult(
             root_cause=RootCause.INSUFFICIENT_FUNDS,
             reasoning=(
                 "Root cause: insufficient_funds. "
                 f"error_code={payment.error_code} error_reason={payment.error_reason} "
-                "matched insufficient-funds rules."
+                "matched insufficient-funds rules. [Source: deterministic_rules]"
             ),
             confidence=1.0,
+            source="deterministic_rules",
         )
 
     if _is_expired_card(reason, code):
@@ -35,9 +45,10 @@ def detect_root_cause(payment: Payment) -> ClassificationResult:
             reasoning=(
                 "Root cause: expired_card. "
                 f"error_code={payment.error_code} error_reason={payment.error_reason} "
-                "matched expired-card rules."
+                "matched expired-card rules. [Source: deterministic_rules]"
             ),
             confidence=1.0,
+            source="deterministic_rules",
         )
 
     if _is_risk_block(reason, code):
@@ -46,9 +57,10 @@ def detect_root_cause(payment: Payment) -> ClassificationResult:
             reasoning=(
                 "Root cause: risk_block. "
                 f"error_code={payment.error_code} error_reason={payment.error_reason} "
-                "matched risk-engine / risk-check rules."
+                "matched risk-engine / risk-check rules. [Source: deterministic_rules]"
             ),
             confidence=1.0,
+            source="deterministic_rules",
         )
 
     if _is_network_timeout(reason, code):
@@ -57,9 +69,10 @@ def detect_root_cause(payment: Payment) -> ClassificationResult:
             reasoning=(
                 "Root cause: network_timeout. "
                 f"error_code={payment.error_code} error_reason={payment.error_reason} "
-                "matched timeout / network-error rules."
+                "matched timeout / network-error rules. [Source: deterministic_rules]"
             ),
             confidence=1.0,
+            source="deterministic_rules",
         )
 
     if _is_issuer_decline(reason, code):
@@ -68,9 +81,30 @@ def detect_root_cause(payment: Payment) -> ClassificationResult:
             reasoning=(
                 "Root cause: issuer_decline. "
                 f"error_code={payment.error_code} error_reason={payment.error_reason} "
-                "matched bank/issuer decline rules."
+                "matched bank/issuer decline rules. [Source: deterministic_rules]"
             ),
             confidence=1.0,
+            source="deterministic_rules",
+        )
+
+    # --- Stage 2-4: Residual Unknown Escalation (Cache -> Groq AI -> Deterministic Fallback) ---
+    bank_health = get_bank_health_for_payment(payment)
+    bank_tag = f" [Bank Health: {bank_health['bank']} {int(bank_health['success_rate']*100)}% SR - {bank_health['status'].capitalize()}]"
+
+    ai_result, source = classify_with_fallback(payment, bank_health)
+
+    if ai_result is not None:
+        marker = "⚡ AI Forensic:" if source == "groq" else "⚡ Cache Forensic:"
+        return ClassificationResult(
+            root_cause=RootCause(ai_result.root_cause),
+            # "Root cause: X (...)." prefix is load-bearing -- the dashboard's
+            # frontend parser extracts root cause from exactly this phrase.
+            reasoning=(
+                f"Root cause: {ai_result.root_cause} (confidence={ai_result.confidence:.2f}). "
+                f"{marker} {ai_result.forensic_reasoning}{bank_tag} [Source: {source}]"
+            ),
+            confidence=ai_result.confidence,
+            source=source,
         )
 
     return ClassificationResult(
@@ -78,9 +112,12 @@ def detect_root_cause(payment: Payment) -> ClassificationResult:
         reasoning=(
             "Root cause: unknown. "
             f"error_code={payment.error_code} error_reason={payment.error_reason} "
-            "did not match any deterministic recovery taxonomy rule."
+            "did not match any deterministic recovery taxonomy rule. "
+            "AI escalation also failed to produce a diagnosis. "
+            "[Source: deterministic_fallback]"
         ),
         confidence=None,
+        source="deterministic_fallback",
     )
 
 

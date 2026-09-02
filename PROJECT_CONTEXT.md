@@ -1,198 +1,66 @@
-# Payment Recovery Agent
+# PROJECT_CONTEXT.md
 
-## Hackathon
-Razorpay Buildathon 2026
+## Project
 
-Track:
-AI Revenue Recovery
+RecoveryMind AI
 
-Sub-direction:
-Payment Degradation → Root Cause → Recovery Action
+Multi-agent payment recovery platform built for the Razorpay AI Buildathon.
 
+**Goal:** Increase payment Success Rate (SR) and recover merchant revenue lost due to failed transactions.
 
-# Problem
+---
 
-Merchants lose revenue because payments fail.
+## Current Status
 
-Current systems only show:
-- payment failed
-- error code
+- **Backend:** ✅ Complete
+- **Frontend:** ✅ Complete
+- **Dashboard:** ✅ Complete & Reconciled
+- **Audit Trail:** ✅ Immutable & Filterable
+- **Pipeline Visualization:** ✅ Working
+- **AI Diagnosis Engine:** ✅ Groq LPU + In-Memory Fingerprint Cache
 
-They don't explain:
-- why it failed
-- what action should happen
-- whether recovery is safe
+---
 
+## Core Principles
 
-# Solution
+### Principle 1: Rules Decide Money
+AI never decides money movement or interventions. Groq strictly diagnoses the root cause of ambiguous failures. All financial actions remain deterministic and auditable.
 
-Build an agentic payment recovery system.
+### Principle 2: Rules First, AI Second
+Known failures (~85%) are resolved by deterministic rules at 0ms latency and $0 compute cost. Only ambiguous residual failures are escalated to the AI layer.
 
-The system:
+### Principle 3: Guardrails Hold Final Authority
+The Guardrail Agent enforces hard limits (spend caps, retry counts, cooldown windows) and has the unilateral authority to override or block any recovery action.
 
-1. Detects failed payments
-2. Diagnoses root cause
-3. Selects recovery strategy
-4. Executes bounded action
-5. Records complete audit trail
+---
 
+## Diagnostic Hierarchy
 
-# Architecture
+1. **Deterministic Rules:** Checked first at 0ms. Never cached.
+2. **Diagnosis Cache:** In-memory fingerprint matching on `(error_code, error_reason, method, bank_name, bank_status)`.
+3. **Primary AI (Groq):** `qwen/qwen3.8-27b` via Groq's low-latency LPU endpoint.
+4. **Deterministic Fallback:** Safe degradation to `RootCause.UNKNOWN` and `HOLD` quarantine.
 
-Flow:
+---
 
-Failed Payment
-        |
-        ↓
-Classifier
-        |
-        ↓
-Policy Engine
-        |
-        ↓
-Guardrails
-        |
-        ↓
-Executor
-        |
-        ↓
-Audit Trail
+## Source Attribution in AuditLog
 
+- `source = groq` (Marker: `⚡ AI Forensic:`)
+- `source = cache` (Marker: `⚡ Cache Forensic:`)
+- `source = deterministic_fallback` (Quarantine)
+- `source = deterministic_rules` (Rule-based)
 
-# Agent Responsibilities
+---
 
+## Multi-Agent Pipeline
 
-## Classifier
+1. **Diagnose Agent:** Identifies root cause using Rules $\rightarrow$ Cache $\rightarrow$ Groq $\rightarrow$ Fallback.
+2. **Decision Agent:** Maps root cause to optimal intervention (`retry_now`, `retry_later`, `suggest_alt_method`, `hold`).
+3. **Guardrail Agent:** Validates financial safety constraints and spend caps.
+4. **Executor Agent:** Executes approved interventions and records outcomes.
 
-Purpose:
-Understand why payment failed.
+---
 
-Input:
-- error_code
-- error_reason
+## Buildathon Positioning
 
-Output:
-- root_cause
-- reasoning
-- confidence
-
-Important:
-Rules first.
-LLM only for unknown cases.
-
-
-## Policy Engine
-
-Purpose:
-Decide what action is allowed.
-
-Input:
-- root cause
-- retry count
-- confidence
-
-Output:
-- intervention type
-
-Must be deterministic.
-
-Never use LLM for money decisions.
-
-
-## Executor
-
-Purpose:
-Perform action.
-
-Only component allowed to call Razorpay APIs.
-
-Currently:
-Mock executor.
-
-Later:
-Razorpay test mode.
-
-
-## Audit System
-
-Every decision must be explainable.
-
-Example:
-
-Payment failed because:
-"Bank timeout detected"
-
-Decision:
-"Retry once after cooldown"
-
-Result:
-"Recovered"
-
-
-# Tech Stack
-
-Backend:
-FastAPI
-
-Database:
-SQLite + SQLAlchemy
-
-Frontend:
-React
-
-AI:
-Rules first
-LLM fallback later
-
-Agent framework:
-LangGraph optional
-
-
-# Database
-
-Tables:
-
-Payment
-
-Intervention
-
-AuditLog
-
-BatchRun
-
-
-# Current Progress
-
-Completed:
-
-[x] FastAPI setup
-[x] SQLite connection
-[x] Basic models
-[x] Seed endpoint started
-
-
-Next:
-
-1. Finalize database schema
-2. Build classifier
-3. Build policy engine
-4. Build mock executor
-5. Build orchestrator
-6. Add Razorpay test integration
-7. Build dashboard
-
-
-# Development Rules
-
-Do not:
-- Build unnecessary complexity
-- Add queues
-- Add authentication
-- Use LLM for decisions
-- Build UI before backend works
-
-Prioritize:
-- Working demo
-- Explainability
-- Audit trail
-- Recovery metrics
+RecoveryMind AI is not an autonomous payment executor. It is an intelligent decisioning and diagnostic layer that increases payment Success Rates while protecting merchants with strict financial guardrails.
