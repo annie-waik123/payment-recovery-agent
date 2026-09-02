@@ -1,73 +1,63 @@
 # Payment Recovery Agent
 
-An AI-powered payment recovery system that automatically diagnoses failed payments, applies recovery strategies, enforces guardrails, and provides a complete audit trail.
+AI-powered payment failure diagnosis and recovery platform built with FastAPI, React, and Groq.
 
-Built as a multi-agent workflow that combines deterministic payment intelligence, Groq-powered forensic diagnosis, fingerprint-based caching, and recovery automation.
+The system automatically analyzes failed payments, identifies root causes, applies recovery strategies, enforces business guardrails, and generates a complete audit trail for every decision.
 
----
+## Live Demo
 
-## Overview
+Frontend:
+https://payment-recovery-frontend.vercel.app
 
-Payment failures are a major source of revenue leakage for businesses. This project analyzes failed transactions, identifies root causes, recommends recovery actions, and tracks outcomes through a transparent audit pipeline.
+## Problem Statement
 
-The system prioritizes:
+Payment failures create significant revenue leakage for businesses.
 
-- Fast diagnosis
-- Explainable decisions
-- Safe recovery actions
-- Full auditability
-- Low inference cost
-- High reliability
+Traditional systems often:
+- Retry blindly
+- Lack explainability
+- Provide poor diagnostics
+- Have limited visibility into recovery outcomes
 
----
+This project introduces an agentic recovery workflow that combines deterministic rules, AI-powered diagnosis, caching, and recovery automation.
+
+## Key Features
+
+- Multi-agent recovery pipeline
+- Groq-powered forensic diagnosis
+- Fingerprint-based diagnosis cache
+- Deterministic payment intelligence
+- Recovery strategy engine
+- Business guardrails
+- Revenue recovery analytics
+- Complete audit trail
+- Interactive dashboard
+- Real-time incident simulation
 
 ## Architecture
 
-### 1. Classifier Agent
+### Agent Workflow
 
-Determines the root cause of a failed payment.
+```text
+Failed Payment
+      │
+      ▼
+Classifier Agent
+      │
+      ▼
+Decision Agent
+      │
+      ▼
+Guardrail Agent
+      │
+      ▼
+Executor Agent
+      │
+      ▼
+Recovery Outcome
+```
 
-Examples:
-
-- Insufficient funds
-- Network timeout
-- Issuer decline
-- Risk block
-- Expired card
-- Unknown failure
-
-### 2. Decision Agent
-
-Selects the best recovery strategy.
-
-Examples:
-
-- Retry now
-- Retry later
-- Alternate payment method
-- Escalation
-- Hold transaction
-
-### 3. Guardrail Agent
-
-Applies business and safety constraints.
-
-Examples:
-
-- Batch spend limits
-- Confidence thresholds
-- Recovery policy checks
-- Risk containment
-
-### 4. Executor Agent
-
-Performs the approved recovery action and records the result.
-
----
-
-## AI Diagnostic Architecture
-
-The project uses a streamlined Groq-only AI pipeline.
+### AI Diagnostic Pipeline
 
 ```text
 Failed Payment
@@ -79,133 +69,83 @@ Deterministic Rules
 Fingerprint Cache
       │
       ▼
-Groq AI Diagnosis
+Groq Diagnosis
       │
       ▼
-Deterministic Fallback
+Fallback Logic
 ```
 
-### Deterministic Rules
+## Agent Responsibilities
 
-Handles known payment failure patterns.
+### Classifier Agent
+Identifies payment failure root causes.
 
 Examples:
+- Insufficient funds
+- Network timeout
+- Issuer decline
+- Expired card
+- Risk block
 
-- insufficient_funds
-- expired_card
-- issuer_decline
-- network_timeout
+### Decision Agent
+Selects the optimal recovery strategy.
 
-### Fingerprint Cache
+Examples:
+- Retry now
+- Retry later
+- Escalate
+- Alternative payment method
 
-Previously diagnosed ambiguous failures are cached.
+### Guardrail Agent
+Applies business constraints and safety checks.
 
-Benefits:
+Examples:
+- Confidence thresholds
+- Risk controls
+- Retry limitations
+- Policy enforcement
 
-- 0ms retrieval
-- No additional AI calls
-- Reduced cost
-- Consistent diagnoses
-
-### Groq AI
-
-Used only when deterministic rules cannot identify a root cause.
-
-Provides:
-
-- Forensic reasoning
-- Context-aware diagnosis
-- Recovery recommendations
-
-### Deterministic Fallback
-
-If AI becomes unavailable, the system safely quarantines the payment and marks it as:
-
-```text
-RootCause.UNKNOWN
-```
-
----
-
-## Key Features
-
-- Multi-agent recovery workflow
-- Groq-powered forensic diagnosis
-- Fingerprint-based diagnosis cache
-- Deterministic payment intelligence
-- Recovery strategy engine
-- Guardrail enforcement
-- Revenue impact analytics
-- Immutable audit trail
-- Interactive dashboard
-- Real-time incident simulation
-
----
+### Executor Agent
+Performs approved recovery actions and records outcomes.
 
 ## Dashboard Features
 
 ### Executive Summary
-
 - Recovery rate
 - Revenue recovered
 - Revenue at risk
-- Top root causes
+- Root cause distribution
 
 ### AI Diagnostics
-
-- Rule vs AI breakdown
-- AI escalation coverage
-- Forensic confidence
+- Rule vs AI decisions
 - Cache hit statistics
-- AI-attributed recovery revenue
-
-### Agent Pipeline
-
-Visual representation of:
-
-```text
-Failed Payment
-→ Classifier
-→ Decision Engine
-→ Guardrails
-→ Executor
-→ Outcome
-```
+- AI escalation coverage
+- Diagnostic confidence
 
 ### Audit Trail
-
-Provides:
-
 - Root cause analysis
-- Decision reasoning
-- Recovery actions
-- AI forensic insights
+- Recovery decisions
+- AI reasoning
 - Timestamps
+- Recovery outcomes
 
----
-
-## Technology Stack
+## Tech Stack
 
 ### Backend
-
 - Python
 - FastAPI
 - SQLAlchemy
 - SQLite
 
 ### Frontend
-
 - React
 - Vite
 - Recharts
 
 ### AI Layer
-
 - Groq API
 - Qwen Model
-- In-Memory Fingerprint Cache
-
----
+- Fingerprint Cache
 
 ## Project Structure
 
@@ -213,13 +153,11 @@ Provides:
 payment-recovery-agent/
 │
 ├── backend/
-│   ├── app/
-│   ├── .env
-│   ├── payment_recovery.db
+│   └── app/
 │
 ├── frontend/
 │   ├── src/
-│   ├── dist/
+│   └── public/
 │
 ├── submission_assets/
 │
@@ -230,26 +168,17 @@ payment-recovery-agent/
 └── .gitignore
 ```
 
----
-
 ## Installation
 
-### Clone Repository
-
-```bash
-git clone <repository-url>
-cd payment-recovery-agent
-```
-
-### Backend Setup
+### Backend
 
 ```bash
 python -m venv venv
 ```
 
-Activate environment:
+Activate:
 
-Windows:
+Windows
 
 ```bash
 venv\Scripts\activate
@@ -270,19 +199,17 @@ backend/.env
 Add:
 
 ```env
-GROQ_API_KEY=your_key_here
+GROQ_API_KEY=your_api_key
 ```
 
-Start backend:
+Run backend:
 
 ```bash
 cd backend
 uvicorn app.main:app --reload
 ```
 
----
-
-### Frontend Setup
+### Frontend
 
 ```bash
 cd frontend
@@ -291,39 +218,16 @@ npm run dev
 ```
 
 Frontend:
-
 ```text
 http://localhost:5173
 ```
 
 Backend:
-
 ```text
 http://localhost:8000
 ```
 
----
-
-## Testing
-
-Run verification suite:
-
-```bash
-python test_groq_cache_verification.py
-```
-
-Tests verify:
-
-- Groq diagnosis path
-- Cache hit path
-- Deterministic fallback path
-- Full batch reconciliation
-
----
-
-## Example Results
-
-Sample batch:
+## Sample Results
 
 ```text
 Payments Analyzed: 50
@@ -334,35 +238,29 @@ Cache Hits: 2
 Revenue Recovered: ₹23,059
 ```
 
----
-
 ## Design Principles
 
 - Explainability first
-- AI only for ambiguity
 - Deterministic when possible
+- AI only for ambiguity
 - Safety before automation
-- Complete auditability
-- Low latency
+- Full auditability
 - Cost-efficient inference
-
----
+- Low-latency recovery
 
 ## Future Enhancements
 
 - Redis distributed cache
 - Multiple payment gateway integrations
-- Real bank telemetry APIs
 - Human approval workflows
 - Predictive recovery optimization
-- Multi-model AI routing
-
----
+- Multi-model routing
+- Real payment gateway APIs
 
 ## Author
 
-Waikhom Annithoi
+**Waikhom Annithoi**
 
 Computer Engineering Student
 
-Built as an intelligent payment failure diagnosis and revenue recovery platform combining deterministic systems, agentic workflows, and Groq-powered forensic analysis.
+Built for intelligent payment failure diagnosis, recovery automation, and revenue protection using agentic AI workflows.
