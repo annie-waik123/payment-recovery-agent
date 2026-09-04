@@ -4,10 +4,6 @@ AI-powered payment failure diagnosis and recovery platform built with FastAPI, R
 
 The system automatically analyzes failed payments, identifies root causes, applies recovery strategies, enforces business guardrails, and generates a complete audit trail for every decision.
 
-## Live Demo
-
-Frontend:
-https://payment-recovery-frontend.vercel.app
 
 ## Problem Statement
 
